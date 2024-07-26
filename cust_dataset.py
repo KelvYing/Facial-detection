@@ -7,12 +7,13 @@ import pandas as pd
 import numpy as np
 
 
-class CelebDataset(Dataset): 
+
+class FaceDataset(Dataset): 
     
     def __init__ (self, box_path, root_dir) -> None:
         
         self.to_tensor = transforms.ToTensor()
-        self.data_info = pd.read_csv(box_path)
+        self.data_info = box_path
         self.root_dir = root_dir
         self.image_arr = np.asarray(self.data_info.iloc[:, 0])
         
