@@ -2,6 +2,8 @@ from cust_dataset import FaceDataset
 from torchvision.utils import draw_bounding_boxes
 import matplotlib.pyplot as plt
 import torch
+import torchvision
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision import transforms
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit 
@@ -21,24 +23,35 @@ def main() -> None:
 
     train = FaceDataset(train, './archive/images/')
     test = FaceDataset(test, './archive/images/')
-    print(len(train.image_arr))
-    print(len(test.image_arr))
+    print(train.data_len)
+    print(test.data_len)
 
-    boxes, img = next(iter(test))
-    x, y, xx, yy = boxes
-    print(x,y,xx,yy)
-    
-    boxes_tensor = torch.tensor(boxes).unsqueeze(0)
-    img_bbox= draw_bounding_boxes(img , boxes_tensor, width = 3, colors = 'red')
-    
-    transform = transforms.Compose([
-        transforms.ToPILImage()
-    ])
-    
-    plt.imshow(transform(img_bbox))
-    plt.show()
-    print('here')
+    #boxes, img = next(iter(test))
 
+    for boxes, img in test:
+        print(boxes)
+        
+        img_bbox= draw_bounding_boxes(img , boxes, width = 3, colors = 'red')
+
+        transform = transforms.Compose([
+            transforms.ToPILImage()
+        ])
+
+        plt.imshow(transform(img_bbox))
+        plt.show()
+
+    
+
+
+    # Load a pre-trained model
+    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+
+    # Get the number of input features for the classifier
+    in_features = model.roi_heads.box_predictor.cls_score.in_features
+
+    # Replace the pre-trained head with a new one (number of classes + background)
+    num_classes = 2  # Adjust this according to your dataset (number of object classes + background)
+    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
 
 if __name__ == "__main__":
