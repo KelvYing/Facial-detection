@@ -33,7 +33,7 @@ class FaceDataset(Dataset):
         #store bounding box information
         box = torch.tensor(list(zip(img_dat['x0'], img_dat['y0'], img_dat['x1'], img_dat['y1'])), dtype=torch.float32)
         
-        return (box , img_as_tensor)
+        return (img_as_tensor , box)
 
     def __len__(self) -> int:
         return self.data_len

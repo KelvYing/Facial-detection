@@ -1,4 +1,3 @@
-from cust_dataset import FaceDataset
 from torchvision.utils import draw_bounding_boxes
 import matplotlib.pyplot as plt
 import torch
@@ -7,6 +6,9 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision import transforms
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit 
+
+from cust_dataset import FaceDataset
+from mask import create_mask
 
 def main() -> None:
     
@@ -28,8 +30,8 @@ def main() -> None:
 
     #boxes, img = next(iter(test))
 
-    for boxes, img in test:
-        print(boxes)
+    for img , boxes  in test:
+        #print(boxes)
         
         img_bbox= draw_bounding_boxes(img , boxes, width = 3, colors = 'red')
 
@@ -37,7 +39,9 @@ def main() -> None:
             transforms.ToPILImage()
         ])
 
-        plt.imshow(transform(img_bbox))
+        mask = create_mask(boxes, img)
+        plt.imshow(mask, cmap='gray')
+        #plt.imshow(transform(img_bbox))
         plt.show()
 
     
