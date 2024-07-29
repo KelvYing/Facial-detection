@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import Dataset
 import pandas as pd
 import numpy as np
-
+from mask import create_mask
 
 
 class FaceDataset(Dataset): 
@@ -33,7 +33,7 @@ class FaceDataset(Dataset):
         #store bounding box information
         box = torch.tensor(list(zip(img_dat['x0'], img_dat['y0'], img_dat['x1'], img_dat['y1'])), dtype=torch.float32)
         
-        return (img_as_tensor , box)
+        return (img_as_tensor , box , create_mask(box, img_as_tensor))
 
     def __len__(self) -> int:
         return self.data_len

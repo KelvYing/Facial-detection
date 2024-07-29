@@ -15,33 +15,42 @@ def main() -> None:
     #train/ test sample split
     dat = pd.read_csv('./archive/faces.csv')
     
+    #split data into groups and making sure all bbox for an image are kept in train/test
     splitter = GroupShuffleSplit(test_size=.20, n_splits=2, random_state = 7)
     split = splitter.split(dat, groups=dat['image_name'])
     train_inds, test_inds = next(split)
 
+    #slice the data
     train = dat.iloc[train_inds]
     test = dat.iloc[test_inds]
 
-
+    #create the dataset objects
     train = FaceDataset(train, './archive/images/')
     test = FaceDataset(test, './archive/images/')
     print(train.data_len)
     print(test.data_len)
 
-    #boxes, img = next(iter(test))
-
-    for img , boxes  in test:
+    transform = transforms.Compose([
+        transforms.Resize((250, 250)),
+        transforms.ToPILImage()
+        
+    ])
+    
+        
+    for img , boxes , mask  in test:
         #print(boxes)
         
-        img_bbox= draw_bounding_boxes(img , boxes, width = 3, colors = 'red')
+        img_bbox = draw_bounding_boxes(img , boxes, width = 3, colors = 'red')
 
-        transform = transforms.Compose([
-            transforms.ToPILImage()
-        ])
 
-        mask = create_mask(boxes, img)
-        plt.imshow(mask, cmap='gray')
-        #plt.imshow(transform(img_bbox))
+
+        #mask = create_mask(boxes, img)
+        print(mask)
+        plt.imshow(transform(mask.unsqueeze(0)), cmap='gray') #have to transform mask.unsqueeze(0) due to bad indices
+        
+        plt.show()
+        plt.clf()
+        plt.imshow(transform(img_bbox))
         plt.show()
 
     
