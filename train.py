@@ -67,12 +67,8 @@ def main() -> None:
     for param in model.parameters():
         param.requires_grad = False
     # Get the number of input features for the classifier
-    num_ftrs = model.fc.in_features
-
-    model.fc = nn.Sequential (  nn.Linear(num_ftrs, 128),
-                                nn.Linear(128, 64),
-                                nn.Linear(64, 6),
-                             )
+    in_features = model.roi_heads.box_predictor.cls_score.in_features
+    model.roi_heads.box_predictor = torchvision.models.detection.faster_rcnn.FastRCNNPredictor(in_features, 2)
 
     model = model.to(device)
 
@@ -88,7 +84,7 @@ def main() -> None:
             mask = mask.to(device).float()
 
             #get output
-            out_bb = model(img)
+            loss_dict = model(img, mask)
             #get loss for predicted mask tensor
             # loss_bb = F.l1_loss(out_bb, mask, reduction="none").sum(1)
             # loss_bb = loss_bb.sum()
