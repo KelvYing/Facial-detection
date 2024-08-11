@@ -12,8 +12,22 @@ from sklearn.model_selection import GroupShuffleSplit
 
 from cust_dataset import FaceDataset
 from mask import create_mask
+from models import RCNN
 
-
+def train_batch(inputs, model, optimizer, criterion):
+    
+    model.train()
+    optimizer.zero_grad()
+    _delta = model(inputs)
+    ...
+    
+def validate_batch(inputs, model, criterion):
+    
+    with torch.no_grad():
+        model.eval()
+        _deltas = model(inputs)
+        loss,loc_loss = criterion()
+        
 def main() -> None:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -59,16 +73,12 @@ def main() -> None:
         plt.imshow(transform(img_bbox))
         plt.show()
 
-    
-
-
-    # Load a pre-trained model
-    model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
-    for param in model.parameters():
-        param.requires_grad = False
+    # model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+    # for param in model.parameters():
+    #     param.requires_grad = False
     # Get the number of input features for the classifier
-    in_features = model.roi_heads.box_predictor.cls_score.in_features
-    model.roi_heads.box_predictor = torchvision.models.detection.faster_rcnn.FastRCNNPredictor(in_features, 2)
+    # in_features = model.roi_heads.box_predictor.cls_score.in_features
+    # model.roi_heads.box_predictor = torchvision.models.detection.faster_rcnn.FastRCNNPredictor(in_features, 2)
 
     model = model.to(device)
 
@@ -89,16 +99,16 @@ def main() -> None:
             # loss_bb = F.l1_loss(out_bb, mask, reduction="none").sum(1)
             # loss_bb = loss_bb.sum()
             # loss = loss_class + loss_bb/C
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            # optimizer.zero_grad()
+            # loss.backward()
+            # optimizer.step()
 
 
-            optimizer.zero_grad()
-            outputs, output_mask = model(img, mask)
-            loss = criterion(outputs, ...)
-            loss.backward()
-            optimizer.step()
+            # optimizer.zero_grad()
+            # outputs, output_mask = model(img, mask)
+            # loss = criterion(outputs, ...)
+            # loss.backward()
+            # optimizer.step()
 
 
 if __name__ == "__main__":
