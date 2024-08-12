@@ -36,7 +36,7 @@ def train_batch(dataloader, model, optimizer, criterion, device):
             
             # add loss? and print loss per epoch?
     
-def validate_batch(model, criterion, dataloader, device):
+def validate_batch(dataloader, model, criterion, device):
     model.eval()
     with torch.no_grad():
         for images , bbox in dataloader:
@@ -44,6 +44,22 @@ def validate_batch(model, criterion, dataloader, device):
             bbox = bbox.to(device)
             outputs = model(images)
             loss = criterion( outputs, bbox )
+            
+def view(test, transform):
+    #view images with bounding boxes and masks
+    for img , boxes , mask  in test:
+        #print(boxes)
+        
+        img_bbox = draw_bounding_boxes(img , boxes, width = 3, colors = 'red')
+
+        #mask = create_mask(boxes, img)
+        print(mask)
+        plt.imshow(transform(mask.unsqueeze(0)), cmap='gray') #have to transform mask.unsqueeze(0) due to bad indices
+        
+        plt.show()
+        plt.clf()
+        plt.imshow(transform(img_bbox))
+        plt.show()
         
 def main() -> None:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -60,9 +76,16 @@ def main() -> None:
     train = dat.iloc[train_inds]
     test = dat.iloc[test_inds]
 
+    #create the data transformation
+    transform_data = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    ])
+        
     #create the dataset objects
-    train = FaceDataset(train, './archive/images/')
-    test = FaceDataset(test, './archive/images/')
+    train = FaceDataset(train, './archive/images/', transform = transform_data)
+    test = FaceDataset(test, './archive/images/', transform = transform_data)
     batch_size = 32
     train_dl = DataLoader(train, batch_size = batch_size, shuffle = True)
     test_dl = DataLoader(test, batch_size = batch_size)
@@ -73,34 +96,18 @@ def main() -> None:
         
     ])
     
-        
-    for img , boxes , mask  in test:
-        #print(boxes)
-        
-        img_bbox = draw_bounding_boxes(img , boxes, width = 3, colors = 'red')
 
-
-
-        #mask = create_mask(boxes, img)
-        print(mask)
-        plt.imshow(transform(mask.unsqueeze(0)), cmap='gray') #have to transform mask.unsqueeze(0) due to bad indices
-        
-        plt.show()
-        plt.clf()
-        plt.imshow(transform(img_bbox))
-        plt.show()
-
-    # model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
-    # for param in model.parameters():
-    #     param.requires_grad = False
-    # Get the number of input features for the classifier
-    # in_features = model.roi_heads.box_predictor.cls_score.in_features
-    # model.roi_heads.box_predictor = torchvision.models.detection.faster_rcnn.FastRCNNPredictor(in_features, 2)
-
+    #Create models and other stuff
     model = RCNN().to(device)
     criterion = nn.SmoothL1Loss()
     optimizer = optim.Adam(model.parameters(), lr= 0.002)
-
+    
+    #train the model
+    train_batch(train_dl, model, optimizer, criterion, device)
+    
+    #validate the model
+    validate_batch(test_dl, model, criterion, device)
+    
 
 
 if __name__ == "__main__":

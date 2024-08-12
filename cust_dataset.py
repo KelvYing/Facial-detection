@@ -10,8 +10,8 @@ from mask import create_mask
 
 class FaceDataset(Dataset): 
     
-    def __init__ (self, box_path, root_dir) -> None:
-        
+    def __init__ (self, box_path, root_dir, transform = None) -> None:
+        self.transform = transform
         self.to_tensor = transforms.ToTensor()
         self.data_info = box_path
         self.root_dir = root_dir
@@ -25,8 +25,10 @@ class FaceDataset(Dataset):
         img_dat = self.image_arr[index]
         img_name = img_dat['image_name'][0]
         
-        
-        img_as_img = np.array(Image.open((self.root_dir + img_name)))
+        img = Image.open((self.root_dir + img_name))
+        if self.transform:
+            img = self.transform(img)
+        img_as_img = np.array(img)
         print(type(img_as_img))
         img_as_tensor = self.to_tensor(img_as_img)
         
