@@ -14,19 +14,36 @@ from cust_dataset import FaceDataset
 from mask import create_mask
 from models import RCNN
 
-def train_batch(inputs, model, optimizer, criterion):
-    
+def train_batch(dataloader, model, optimizer, criterion, device):
     model.train()
-    optimizer.zero_grad()
-    _delta = model(inputs)
-    ...
+    for epoch in range(5):
+        # loss?
+        print('epoch : ', epoch)
+        for batch_idx, ( images, bbox ) in enumerate(dataloader):
+            images = images.to(device)
+            targets = targets.to(device)
+            
+            #pass the images into the model
+            output = model(images)
+            
+            #Compute Loss
+            loss = criterion(output, targets)
+            
+            #Backprop and optimize
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            
+            # add loss? and print loss per epoch?
     
-def validate_batch(inputs, model, criterion):
-    
+def validate_batch(model, criterion, dataloader, device):
+    model.eval()
     with torch.no_grad():
-        model.eval()
-        _deltas = model(inputs)
-        loss,loc_loss = criterion()
+        for images , bbox in dataloader:
+            images = images.to(device)
+            bbox = bbox.to(device)
+            outputs = model(images)
+            loss = criterion( outputs, bbox )
         
 def main() -> None:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -51,7 +68,7 @@ def main() -> None:
     test_dl = DataLoader(test, batch_size = batch_size)
 
     transform = transforms.Compose([
-        transforms.Resize((250, 250)),
+        transforms.Resize((224, 224)),
         transforms.ToPILImage()
         
     ])
@@ -80,35 +97,10 @@ def main() -> None:
     # in_features = model.roi_heads.box_predictor.cls_score.in_features
     # model.roi_heads.box_predictor = torchvision.models.detection.faster_rcnn.FastRCNNPredictor(in_features, 2)
 
-    model = model.to(device)
+    model = RCNN().to(device)
+    criterion = nn.SmoothL1Loss()
+    optimizer = optim.Adam(model.parameters(), lr= 0.002)
 
-    optimizer = optim.Adam(model.fc.parameters(), lr= 0.006)
-
-    for i in range(5):
-
-        for img, boxes, mask in train_dl:
-
-            #transfer image tensor, box values and mask tensor to device
-            img = img.to(device).float()
-            boxes = boxes.to(device)
-            mask = mask.to(device).float()
-
-            #get output
-            loss_dict = model(img, mask)
-            #get loss for predicted mask tensor
-            # loss_bb = F.l1_loss(out_bb, mask, reduction="none").sum(1)
-            # loss_bb = loss_bb.sum()
-            # loss = loss_class + loss_bb/C
-            # optimizer.zero_grad()
-            # loss.backward()
-            # optimizer.step()
-
-
-            # optimizer.zero_grad()
-            # outputs, output_mask = model(img, mask)
-            # loss = criterion(outputs, ...)
-            # loss.backward()
-            # optimizer.step()
 
 
 if __name__ == "__main__":

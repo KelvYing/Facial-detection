@@ -22,21 +22,22 @@ vgg_backbone.eval().to(device)
 
 class RCNN(nn.Module):
     def __init__(self):
-        super.__init__()
-        feature_dim = 25088
+        super().__init__()
+        feature_dim = 512 * 7 * 7
         self.backbone = vgg_backbone
         self.bbox = nn.Sequential(
             nn.Linear(feature_dim, 512),
             nn.ReLU(),
             nn.Linear(512, 4),
-            nn.Tanh(),
+            nn.Sigmoid(),
         )
         self.cel = nn.CrossEntropyLoss()
         self.sl1 = nn.L1Loss()
+        self.mse = nn.MSELoss() 
         
     def forward(self, x):
         feat = self.backbone(x)
-        bbox = self.bbox(x)
+        bbox = self.bbox(feat)
         return bbox
 
     def calc_loss(self, probs, _delta , labels, deltas):
