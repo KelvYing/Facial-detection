@@ -33,9 +33,10 @@ class FaceDataset(Dataset):
         img_as_tensor = self.to_tensor(img_as_img)
         
         #store bounding box information
-        box = torch.tensor(list(zip(img_dat['x0'], img_dat['y0'], img_dat['x1'], img_dat['y1'])), dtype=torch.float32)
+        box = torch.tensor(list(zip(img_dat['x0'], img_dat['y0'], img_dat['x1'], img_dat['y1']))[0], dtype=torch.float32)
+        print(type(box))
         
-        return (img_as_tensor , box , create_mask(box, img_as_tensor))
+        return img_as_tensor , box , create_mask(box, img_as_tensor)
 
     def __len__(self) -> int:
         return self.data_len

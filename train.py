@@ -1,4 +1,5 @@
-from torchvision.utils import draw_bounding_boxes
+from torchvision.utils import draw_bounding_boxes 
+from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import torch.nn as nn
 import torch.optim as optim
@@ -6,7 +7,7 @@ import torch
 import torchvision
 import torchvision.models as models
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision import transforms, DataLoader
+from torchvision import transforms
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit 
 
@@ -19,7 +20,7 @@ def train_batch(dataloader, model, optimizer, criterion, device):
     for epoch in range(5):
         # loss?
         print('epoch : ', epoch)
-        for batch_idx, ( images, bbox ) in enumerate(dataloader):
+        for  images, bbox , mask in enumerate(dataloader):
             images = images.to(device)
             targets = targets.to(device)
             

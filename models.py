@@ -6,7 +6,6 @@ import torch
 import torchvision
 import torchvision.models as models
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from torchvision import transforms, DataLoader
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit 
 
