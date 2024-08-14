@@ -13,6 +13,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # Load a pre-trained model
 vgg_backbone = models.vgg16(pretrained = True)
+vgg_backbone = vgg_backbone.features
 vgg_backbone_classifier = nn.Sequential()
 for param in vgg_backbone.parameters():
     param.requires_grad = False
@@ -25,6 +26,7 @@ class RCNN(nn.Module):
         feature_dim = 512 * 7 * 7
         self.backbone = vgg_backbone
         self.bbox = nn.Sequential(
+            nn.Flatten(),
             nn.Linear(feature_dim, 512),
             nn.ReLU(),
             nn.Linear(512, 4),

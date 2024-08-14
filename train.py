@@ -10,6 +10,8 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision import transforms
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit 
+from torchsummary import summary
+import numpy as np
 
 from cust_dataset import FaceDataset
 from mask import create_mask
@@ -20,7 +22,11 @@ def train_batch(dataloader, model, optimizer, criterion, device):
     for epoch in range(5):
         # loss?
         print('epoch : ', epoch)
-        for  images, bbox , mask in enumerate(dataloader):
+        for idx, (images, targets) in enumerate(dataloader):
+            print(idx)
+            print(images.shape)
+            shape_list = list(images.size())
+            images = torch.reshape(images, (shape_list[0], 3,224,224))
             images = images.to(device)
             targets = targets.to(device)
             
@@ -36,15 +42,52 @@ def train_batch(dataloader, model, optimizer, criterion, device):
             optimizer.step()
             
             # add loss? and print loss per epoch?
+
+def calculate_iou(boxes1, boxes2):
+    # Calculate IoU between predicted and target boxes
+    x1 = np.maximum(boxes1[:, 0], boxes2[:, 0])
+    y1 = np.maximum(boxes1[:, 1], boxes2[:, 1])
+    x2 = np.minimum(boxes1[:, 2], boxes2[:, 2])
+    y2 = np.minimum(boxes1[:, 3], boxes2[:, 3])
     
+    intersection = np.maximum(0, x2 - x1) * np.maximum(0, y2 - y1)
+    area1 = (boxes1[:, 2] - boxes1[:, 0]) * (boxes1[:, 3] - boxes1[:, 1])
+    area2 = (boxes2[:, 2] - boxes2[:, 0]) * (boxes2[:, 3] - boxes2[:, 1])
+    union = area1 + area2 - intersection
+    
+    iou = intersection / (union + 1e-6)  # Add small epsilon to avoid division by zero
+    return np.mean(iou)
+
 def validate_batch(dataloader, model, criterion, device):
     model.eval()
+    total_loss = 0
+    all_predictions = []
+    all_targets = []
     with torch.no_grad():
         for images , bbox in dataloader:
             images = images.to(device)
             bbox = bbox.to(device)
+            
+            
             outputs = model(images)
             loss = criterion( outputs, bbox )
+            total_loss += loss.item()
+            
+            # Store predictions and targets for further evaluation
+            all_predictions.extend(outputs.cpu().numpy())
+            all_targets.extend(bbox.cpu().numpy())
+
+    avg_loss = total_loss / len(dataloader)
+
+    # Convert predictions and targets to numpy arrays
+    all_predictions = np.array(all_predictions)
+    all_targets = np.array(all_targets)
+    
+    # Calculate IoU (Intersection over Union) for bounding boxes
+    iou = calculate_iou(all_predictions, all_targets)
+    
+    return avg_loss, iou
+
             
 def view(test, transform):
     #view images with bounding boxes and masks
@@ -87,19 +130,21 @@ def main() -> None:
     #create the dataset objects
     train = FaceDataset(train, './archive/images/', transform = transform_data)
     test = FaceDataset(test, './archive/images/', transform = transform_data)
-    batch_size = 32
+    batch_size = 128    
     train_dl = DataLoader(train, batch_size = batch_size, shuffle = True)
     test_dl = DataLoader(test, batch_size = batch_size)
 
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToPILImage()
+    # transform = transforms.Compose([
+    #     transforms.Resize((224, 224)),
+    #     transforms.ToPILImage()
         
-    ])
+    # ])
     
 
     #Create models and other stuff
     model = RCNN().to(device)
+    print(summary(model, (3, 224, 224)))
+
     criterion = nn.SmoothL1Loss()
     optimizer = optim.Adam(model.parameters(), lr= 0.002)
     
@@ -107,8 +152,8 @@ def main() -> None:
     train_batch(train_dl, model, optimizer, criterion, device)
     
     #validate the model
-    validate_batch(test_dl, model, criterion, device)
-    
+    val = validate_batch(test_dl, model, criterion, device)
+    print(val)
 
 
 if __name__ == "__main__":
