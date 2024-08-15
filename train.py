@@ -1,6 +1,7 @@
 from torchvision.utils import draw_bounding_boxes 
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import torch.nn as nn
 import torch.optim as optim
 import torch
@@ -12,6 +13,7 @@ import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit 
 from torchsummary import summary
 import numpy as np
+from PIL import Image
 
 from cust_dataset import FaceDataset
 from mask import create_mask
@@ -19,7 +21,7 @@ from models import RCNN
 
 def train_batch(dataloader, model, optimizer, criterion, device):
     model.train()
-    for epoch in range(5):
+    for epoch in range(1):
         # loss?
         print('epoch : ', epoch)
         for idx, (images, targets) in enumerate(dataloader):
@@ -65,9 +67,13 @@ def validate_batch(dataloader, model, criterion, device):
     all_targets = []
     with torch.no_grad():
         for images , bbox in dataloader:
+            shape_list = list(images.size())
+            images = torch.reshape(images, (shape_list[0], 3,224,224))
+            
+            
             images = images.to(device)
             bbox = bbox.to(device)
-            
+
             
             outputs = model(images)
             loss = criterion( outputs, bbox )
@@ -104,7 +110,35 @@ def view(test, transform):
         plt.clf()
         plt.imshow(transform(img_bbox))
         plt.show()
+      
+def view_pred(transforms,device,model):
+    tttt = Image.open('./archive/images/00000006.jpg')
+    ttt = transforms(tttt).unsqueeze(0).to(device)
+
+    with torch.no_grad():  # Disable gradient computation
+        output = model(ttt)
+    
+    output = output.squeeze().cpu().numpy()  
         
+    print(output)
+    
+    fig, ax = plt.subplots(1)
+    
+    # Display the image
+    ax.imshow(tttt)
+
+    # Create a Rectangle patch
+    rect = patches.Rectangle((output[0], output[1]), output[2] - output[0], output[3] - output[1],
+                             linewidth=2, edgecolor='r', facecolor='none')
+
+    # Add the patch to the Axes
+    ax.add_patch(rect)
+
+    plt.axis('off')
+    plt.show()
+    
+    return output, tttt
+    
 def main() -> None:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -155,6 +189,8 @@ def main() -> None:
     val = validate_batch(test_dl, model, criterion, device)
     print(val)
 
+    #view an example result
+    bbox , image = view_pred(transforms,device,model)
 
 if __name__ == "__main__":
     main()
