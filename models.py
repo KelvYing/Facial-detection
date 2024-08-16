@@ -12,7 +12,7 @@ from sklearn.model_selection import GroupShuffleSplit
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # Load a pre-trained model
-vgg_backbone = models.vgg16(pretrained = True)
+vgg_backbone = models.vgg16(weights = 'VGG16_Weights.DEFAULT')
 vgg_backbone = vgg_backbone.features
 vgg_backbone_classifier = nn.Sequential()
 for param in vgg_backbone.parameters():

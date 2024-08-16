@@ -7,6 +7,13 @@ import pandas as pd
 import numpy as np
 from mask import create_mask
 
+def normalize_boxes(boxes, image_width, image_height):
+    print(boxes.shape)
+    return (boxes / torch.tensor([image_width, image_height, image_width, image_height])).squeeze()
+
+# Don't forget to denormalize when visualizing or evaluating:
+def denormalize_boxes(normalized_boxes, image_width, image_height):
+    return normalized_boxes * torch.tensor([image_width, image_height, image_width, image_height])
 
 class FaceDataset(Dataset): 
     
@@ -33,8 +40,13 @@ class FaceDataset(Dataset):
         
         #store bounding box information
         box = torch.tensor(list(zip(img_dat['x0'], img_dat['y0'], img_dat['x1'], img_dat['y1']))[0], dtype=torch.float32)
+        print(box.shape)
         
-        return img_as_tensor , box #, create_mask(box, img_as_tensor)
+        
+        # In your data loading or preprocessing step:
+        normalized_box = normalize_boxes(box.unsqueeze(0), img_dat['width'][0], img_dat['height'][0])
+        
+        return img_as_tensor , normalized_box #, create_mask(box, img_as_tensor)
 
     def __len__(self) -> int:
         return self.data_len

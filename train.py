@@ -68,7 +68,7 @@ def validate_batch(dataloader, model, criterion, device):
     with torch.no_grad():
         for images , bbox in dataloader:
             shape_list = list(images.size())
-            images = torch.reshape(images, (shape_list[0], 3,224,224))
+            images = torch.reshape(images, (shape_list[0], 3, 224, 224))
             
             
             images = images.to(device)
@@ -111,9 +111,9 @@ def view(test, transform):
         plt.imshow(transform(img_bbox))
         plt.show()
       
-def view_pred(transforms,device,model):
+def view_pred(transform,device,model):
     tttt = Image.open('./archive/images/00000006.jpg')
-    ttt = transforms(tttt).unsqueeze(0).to(device)
+    ttt = transform(tttt).unsqueeze(0).to(device)
 
     with torch.no_grad():  # Disable gradient computation
         output = model(ttt)
@@ -173,8 +173,10 @@ def main() -> None:
     #     transforms.ToPILImage()
         
     # ])
-    
+    for img , boxes in train_dl:
+        print(boxes)
 
+    return
     #Create models and other stuff
     model = RCNN().to(device)
     print(summary(model, (3, 224, 224)))
@@ -190,7 +192,7 @@ def main() -> None:
     print(val)
 
     #view an example result
-    bbox , image = view_pred(transforms,device,model)
+    bbox , image = view_pred(transform_data,device,model)
 
 if __name__ == "__main__":
     main()
