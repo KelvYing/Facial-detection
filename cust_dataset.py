@@ -39,14 +39,15 @@ class FaceDataset(Dataset):
         img_as_tensor = self.to_tensor(img_as_img)
         
         #store bounding box information
-        box = torch.tensor(list(zip(img_dat['x0'], img_dat['y0'], img_dat['x1'], img_dat['y1']))[0], dtype=torch.float32)
+        box = torch.tensor(list(zip( img_dat['x0'], img_dat['y0'], img_dat['x1'], img_dat['y1']))[0], dtype=torch.float32)
         print(box.shape)
         
+        scale = torch.tensor( [ 224 / img_dat['width'][0] , 224/ img_dat['height'][0] ,
+                                224 / img_dat['width'][0] , 224/ img_dat['height'][0]])
+        scaled_box = box * scale
+        #normalized_box = normalize_boxes(box.unsqueeze(0), img_dat['width'][0], img_dat['height'][0])
         
-        # In your data loading or preprocessing step:
-        normalized_box = normalize_boxes(box.unsqueeze(0), img_dat['width'][0], img_dat['height'][0])
-        
-        return img_as_tensor , normalized_box #, create_mask(box, img_as_tensor)
+        return img_as_tensor , scaled_box #, create_mask(box, img_as_tensor)
 
     def __len__(self) -> int:
         return self.data_len

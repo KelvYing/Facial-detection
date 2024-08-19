@@ -26,9 +26,10 @@ def train_batch(dataloader, model, optimizer, criterion, device):
         print('epoch : ', epoch)
         for idx, (images, targets) in enumerate(dataloader):
             print(idx)
-            print(images.shape)
-            shape_list = list(images.size())
-            images = torch.reshape(images, (shape_list[0], 3,224,224))
+
+            images = torch.permute(images, (0 , 2 , 3 , 1))
+            #TODO change images to permute
+    
             images = images.to(device)
             targets = targets.to(device)
             
@@ -67,14 +68,12 @@ def validate_batch(dataloader, model, criterion, device):
     all_targets = []
     with torch.no_grad():
         for images , bbox in dataloader:
-            shape_list = list(images.size())
-            images = torch.reshape(images, (shape_list[0], 3, 224, 224))
             
+            images = torch.permute(images, (0 , 2 , 3 , 1))
             
             images = images.to(device)
             bbox = bbox.to(device)
 
-            
             outputs = model(images)
             loss = criterion( outputs, bbox )
             total_loss += loss.item()
@@ -111,7 +110,7 @@ def view(test, transform):
         plt.imshow(transform(img_bbox))
         plt.show()
       
-def view_pred(transform,device,model):
+def view_pred(transform, device, model):
     tttt = Image.open('./archive/images/00000006.jpg')
     ttt = transform(tttt).unsqueeze(0).to(device)
 
@@ -164,7 +163,7 @@ def main() -> None:
     #create the dataset objects
     train = FaceDataset(train, './archive/images/', transform = transform_data)
     test = FaceDataset(test, './archive/images/', transform = transform_data)
-    batch_size = 128    
+    batch_size = 128  
     train_dl = DataLoader(train, batch_size = batch_size, shuffle = True)
     test_dl = DataLoader(test, batch_size = batch_size)
 
@@ -173,10 +172,27 @@ def main() -> None:
     #     transforms.ToPILImage()
         
     # ])
-    for img , boxes in train_dl:
-        print(boxes)
+    # for img , boxes in train:
+    #     # print(boxes.reshape(-1,4))
+    #     # img_bbox = draw_bounding_boxes(torch.reshape(img, (3, 224, 224)) , boxes.reshape(-1,4), width = 3, colors = 'red')
+    #     # plt.imshow(img_bbox)
+    #     # plt.show()
+        
+    #     fig, ax = plt.subplots(1)
+    #     ax.imshow(torch.permute(img, (2, 0, 1)))
 
-    return
+    #     # Create a Rectangle patch
+    #     rect = patches.Rectangle((boxes[0], boxes[1]), boxes[2] - boxes[0], boxes[3] - boxes[1],
+    #                             linewidth=2, edgecolor='r', facecolor='none')
+
+    #     # Add the patch to the Axes
+    #     ax.add_patch(rect)
+
+    #     plt.axis('off')
+    #     plt.show()
+    #     # print(boxes)
+
+    
     #Create models and other stuff
     model = RCNN().to(device)
     print(summary(model, (3, 224, 224)))
@@ -186,7 +202,6 @@ def main() -> None:
     
     #train the model
     train_batch(train_dl, model, optimizer, criterion, device)
-    
     #validate the model
     val = validate_batch(test_dl, model, criterion, device)
     print(val)
