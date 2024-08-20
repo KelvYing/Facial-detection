@@ -21,8 +21,9 @@ from models import RCNN
 
 def train_batch(dataloader, model, optimizer, criterion, device):
     model.train()
-    for epoch in range(1):
+    for epoch in range(10):
         # loss?
+        total_loss = 0
         print('epoch : ', epoch)
         for idx, (images, targets) in enumerate(dataloader):
             print(idx)
@@ -38,14 +39,15 @@ def train_batch(dataloader, model, optimizer, criterion, device):
             
             #Compute Loss
             loss = criterion(output, targets)
-            
+            total_loss += loss.item()
             #Backprop and optimize
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             
             # add loss? and print loss per epoch?
-
+        avg_loss = total_loss / len(dataloader)
+        print('Loss for epoch :', str(avg_loss))
 def calculate_iou(boxes1, boxes2):
     # Calculate IoU between predicted and target boxes
     x1 = np.maximum(boxes1[:, 0], boxes2[:, 0])
@@ -163,7 +165,7 @@ def main() -> None:
     #create the dataset objects
     train = FaceDataset(train, './archive/images/', transform = transform_data)
     test = FaceDataset(test, './archive/images/', transform = transform_data)
-    batch_size = 128  
+    batch_size = 512  
     train_dl = DataLoader(train, batch_size = batch_size, shuffle = True)
     test_dl = DataLoader(test, batch_size = batch_size)
 
@@ -198,7 +200,7 @@ def main() -> None:
     print(summary(model, (3, 224, 224)))
 
     criterion = nn.SmoothL1Loss()
-    optimizer = optim.Adam(model.parameters(), lr= 0.002)
+    optimizer = optim.Adam(model.parameters(), lr= 0.005)
     
     #train the model
     train_batch(train_dl, model, optimizer, criterion, device)

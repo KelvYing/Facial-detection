@@ -40,8 +40,7 @@ class FaceDataset(Dataset):
         
         #store bounding box information
         box = torch.tensor(list(zip( img_dat['x0'], img_dat['y0'], img_dat['x1'], img_dat['y1']))[0], dtype=torch.float32)
-        print(box.shape)
-        
+                
         scale = torch.tensor( [ 224 / img_dat['width'][0] , 224/ img_dat['height'][0] ,
                                 224 / img_dat['width'][0] , 224/ img_dat['height'][0]])
         scaled_box = box * scale

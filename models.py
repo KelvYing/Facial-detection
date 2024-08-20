@@ -30,9 +30,8 @@ class RCNN(nn.Module):
             nn.Linear(feature_dim, 512),
             nn.ReLU(),
             nn.Linear(512, 4),
-            nn.Sigmoid(),
+            nn.ReLU(),
         )
-        self.cel = nn.CrossEntropyLoss()
         self.sl1 = nn.L1Loss()
         self.mse = nn.MSELoss() 
         
