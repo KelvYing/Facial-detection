@@ -19,6 +19,25 @@ from cust_dataset import FaceDataset
 from mask import create_mask
 from models import RCNN
 
+def calculate_iou(boxes1, boxes2):
+    # Calculate IoU between predicted and target boxes
+    boxes1 = boxes1.detach().cpu().numpy()
+    boxes2 = boxes2.detach().cpu().numpy()
+    
+    x1 = np.maximum(boxes1[:, 0], boxes2[:, 0])
+    y1 = np.maximum(boxes1[:, 1], boxes2[:, 1])
+    x2 = np.minimum(boxes1[:, 2], boxes2[:, 2])
+    y2 = np.minimum(boxes1[:, 3], boxes2[:, 3])
+    
+    intersection = np.maximum(0, x2 - x1) * np.maximum(0, y2 - y1)
+    area1 = (boxes1[:, 2] - boxes1[:, 0]) * (boxes1[:, 3] - boxes1[:, 1])
+    area2 = (boxes2[:, 2] - boxes2[:, 0]) * (boxes2[:, 3] - boxes2[:, 1])
+    union = area1 + area2 - intersection
+    
+    iou = intersection / (union + 1e-6)  # Add small epsilon to avoid division by zero
+    return torch.from_numpy(np.array(1 - np.mean(iou), dtype=np.float64)).float().requires_grad_(True)
+
+
 def train_batch(dataloader, model, optimizer, criterion, device):
     model.train()
     for epoch in range(10):
@@ -48,20 +67,6 @@ def train_batch(dataloader, model, optimizer, criterion, device):
             # add loss? and print loss per epoch?
         avg_loss = total_loss / len(dataloader)
         print('Loss for epoch :', str(avg_loss))
-def calculate_iou(boxes1, boxes2):
-    # Calculate IoU between predicted and target boxes
-    x1 = np.maximum(boxes1[:, 0], boxes2[:, 0])
-    y1 = np.maximum(boxes1[:, 1], boxes2[:, 1])
-    x2 = np.minimum(boxes1[:, 2], boxes2[:, 2])
-    y2 = np.minimum(boxes1[:, 3], boxes2[:, 3])
-    
-    intersection = np.maximum(0, x2 - x1) * np.maximum(0, y2 - y1)
-    area1 = (boxes1[:, 2] - boxes1[:, 0]) * (boxes1[:, 3] - boxes1[:, 1])
-    area2 = (boxes2[:, 2] - boxes2[:, 0]) * (boxes2[:, 3] - boxes2[:, 1])
-    union = area1 + area2 - intersection
-    
-    iou = intersection / (union + 1e-6)  # Add small epsilon to avoid division by zero
-    return np.mean(iou)
 
 def validate_batch(dataloader, model, criterion, device):
     model.eval()
@@ -199,13 +204,13 @@ def main() -> None:
     model = RCNN().to(device)
     print(summary(model, (3, 224, 224)))
 
-    criterion = nn.SmoothL1Loss()
+    #criterion = nn.SmoothL1Loss()
     optimizer = optim.Adam(model.parameters(), lr= 0.005)
     
     #train the model
-    train_batch(train_dl, model, optimizer, criterion, device)
+    train_batch(train_dl, model, optimizer, calculate_iou, device)
     #validate the model
-    val = validate_batch(test_dl, model, criterion, device)
+    val = validate_batch(test_dl, model, calculate_iou, device)
     print(val)
 
     #view an example result
