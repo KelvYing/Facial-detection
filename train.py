@@ -34,13 +34,25 @@ def calculate_iou(boxes1, boxes2):
     area2 = (boxes2[:, 2] - boxes2[:, 0]) * (boxes2[:, 3] - boxes2[:, 1])
     union = area1 + area2 - intersection
     
+    #calculate center
+    center1 = (boxes1[:, :2] + boxes1[:, 2:]) /2
+    center2 = (boxes2[:, :2] + boxes2[:, 2:]) / 2
+    
+    #Calculate Euclidean distance
+    center_distance = np.sqrt(np.sum((center1 - center2) ** 2, axis=1))
+    
+    # Normalize center distance by the diagonal of the image (assuming image size is 224 x 224)
+    normalized_center_distance = center_distance / np.sqrt( (224 ** 2 + 224 ** 2) )
+
+    
     iou = intersection / (union + 1e-6)  # Add small epsilon to avoid division by zero
-    return torch.from_numpy(np.array(1 - np.mean(iou), dtype=np.float64)).float().requires_grad_(True)
+    
+    return torch.from_numpy(np.array(2 - np.mean(iou) - np.mean(normalized_center_distance), dtype=np.float64)).float().requires_grad_(True)
 
 
 def train_batch(dataloader, model, optimizer, criterion, device):
     model.train()
-    for epoch in range(10):
+    for epoch in range(2):
         # loss?
         total_loss = 0
         print('epoch : ', epoch)
@@ -48,8 +60,7 @@ def train_batch(dataloader, model, optimizer, criterion, device):
             print(idx)
 
             images = torch.permute(images, (0 , 2 , 3 , 1))
-            #TODO change images to permute
-    
+                
             images = images.to(device)
             targets = targets.to(device)
             
@@ -92,13 +103,13 @@ def validate_batch(dataloader, model, criterion, device):
     avg_loss = total_loss / len(dataloader)
 
     # Convert predictions and targets to numpy arrays
-    all_predictions = np.array(all_predictions)
-    all_targets = np.array(all_targets)
+    # all_predictions = np.array(all_predictions)
+    # all_targets = np.array(all_targets)
     
-    # Calculate IoU (Intersection over Union) for bounding boxes
-    iou = calculate_iou(all_predictions, all_targets)
+    # # Calculate IoU (Intersection over Union) for bounding boxes
+    # iou = calculate_iou(all_predictions, all_targets)
     
-    return avg_loss, iou
+    return avg_loss
 
             
 def view(test, transform):
