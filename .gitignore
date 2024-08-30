@@ -1,3 +1,4 @@
 archive/images/
-archive/files/
+archive/labels/
 __pycache__
+runs/detect

@@ -1,0 +1,9 @@
+path: C:/Users/yingz/Work/Python Work/Projects/Facial detection/archive
+train: C:/Users/yingz/Work/Python Work/Projects/Facial detection/archive/images
+val: C:/Users/yingz/Work/Python Work/Projects/Facial detection/archive/images
+
+train_label_dir: C:/Users/yingz/Work/Python Work/Projects/Facial detection/archive/labels
+val_label_dir: C:/Users/yingz/Work/Python Work/Projects/Facial detection/archive/labels
+
+names:
+  0 : human
