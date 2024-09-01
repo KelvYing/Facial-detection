@@ -19,6 +19,8 @@ from cust_dataset import FaceDataset
 from mask import create_mask
 from models import RCNN
 
+from ultralytics import YOLO
+
 def calculate_iou(boxes1, boxes2):
     # Calculate IoU between predicted and target boxes
     boxes1 = boxes1.detach().cpu().numpy()
@@ -47,12 +49,12 @@ def calculate_iou(boxes1, boxes2):
     
     iou = intersection / (union + 1e-6)  # Add small epsilon to avoid division by zero
     
-    return torch.from_numpy(np.array(2 - np.mean(iou) - np.mean(normalized_center_distance), dtype=np.float64)).float().requires_grad_(True)
+    return torch.from_numpy(np.array(1 - np.mean(iou) + np.mean(normalized_center_distance), dtype=np.float64)).float().requires_grad_(True)
 
 
 def train_batch(dataloader, model, optimizer, criterion, device):
     model.train()
-    for epoch in range(2):
+    for epoch in range(10):
         # loss?
         total_loss = 0
         print('epoch : ', epoch)
@@ -138,6 +140,7 @@ def view_pred(transform, device, model):
     output = output.squeeze().cpu().numpy()  
         
     print(output)
+    print(output * 224)
     
     fig, ax = plt.subplots(1)
     
@@ -212,20 +215,24 @@ def main() -> None:
 
     
     #Create models and other stuff
-    model = RCNN().to(device)
-    print(summary(model, (3, 224, 224)))
-
-    #criterion = nn.SmoothL1Loss()
-    optimizer = optim.Adam(model.parameters(), lr= 0.005)
     
-    #train the model
-    train_batch(train_dl, model, optimizer, calculate_iou, device)
-    #validate the model
-    val = validate_batch(test_dl, model, calculate_iou, device)
-    print(val)
+    # model = RCNN().to(device)
+    # print(summary(model, (3, 224, 224)))
 
-    #view an example result
-    bbox , image = view_pred(transform_data,device,model)
+    # optimizer = optim.Adam(model.parameters(), lr= 0.01)
+    
+    # #train the model
+    # train_batch(train_dl, model, optimizer, calculate_iou, device)
+    # #validate the model
+    # val = validate_batch(test_dl, model, calculate_iou, device)
+    # print(val)
+
+    # #view an example result
+    # bbox , image = view_pred(transform_data,device,model)
+    
+    model = YOLO('yolov8n.pt')
+    
+    results = model.train( data)
 
 if __name__ == "__main__":
     main()
