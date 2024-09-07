@@ -1,4 +1,5 @@
 archive/images/
 archive/labels/
-__pycache__
+__pycache__/
+*.py[cod]
 runs/detect
